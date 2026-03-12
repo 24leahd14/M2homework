@@ -128,13 +128,13 @@ def main() -> None:
 
     max_responses_used = max(len(scores) for scores in scores_by_course.values())
 
-    ranked = []
+    raw_ranked = []
     for course, scores in scores_by_course.items():
         responses_used = len(scores)
         avg_score = sum(scores) / responses_used
         response_weight = responses_used / max_responses_used
         weighted_score = avg_score * response_weight
-        ranked.append(
+        raw_ranked.append(
             {
                 "course": course,
                 "responses_used": responses_used,
@@ -142,9 +142,25 @@ def main() -> None:
                 "most_beneficial": group_counts[course]["Most Beneficial"],
                 "neutral": group_counts[course]["Neutral"],
                 "least_beneficial": group_counts[course]["Least Beneficial"],
-                "avg_score": round(avg_score, 4),
-                "response_weight": round(response_weight, 4),
-                "weighted_score": round(weighted_score, 4),
+                "avg_score": avg_score,
+                "response_weight": response_weight,
+                "weighted_score": weighted_score,
+            }
+        )
+
+    min_avg_score = min(item["avg_score"] for item in raw_ranked)
+    min_weighted_score = min(item["weighted_score"] for item in raw_ranked)
+    avg_offset = -min_avg_score if min_avg_score < 0 else 0.0
+    weighted_offset = -min_weighted_score if min_weighted_score < 0 else 0.0
+
+    ranked = []
+    for item in raw_ranked:
+        ranked.append(
+            {
+                **item,
+                "avg_score": round(item["avg_score"] + avg_offset, 4),
+                "response_weight": round(item["response_weight"], 4),
+                "weighted_score": round(item["weighted_score"] + weighted_offset, 4),
             }
         )
 
@@ -183,6 +199,11 @@ def main() -> None:
             "Final ranking uses `weighted_score = avg_score * (responses_used / max_responses_used)` "
             "to factor in how many completed responses contributed to each course.\n\n"
         )
+        if avg_offset > 0 or weighted_offset > 0:
+            f.write(
+                "To keep values non-negative for reporting, avg and weighted scores are shifted upward "
+                "by a constant offset equal to the absolute value of each metric's minimum.\n\n"
+            )
         f.write("| Rank | Course | Weighted score | Avg score | Response weight | Responses used | Most | Neutral | Least |\n")
         f.write("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n")
         for i, item in enumerate(ranked, start=1):
