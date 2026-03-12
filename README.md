@@ -35,3 +35,15 @@ python scripts/rank_courses.py
 Workflow: `.github/workflows/rank-courses.yml`
 
 It runs on `workflow_dispatch`, `push` to `main`, and `pull_request`, then uploads ranking artifacts.
+
+## Figure output for pull requests
+
+Some code-review tools do not render or diff binary files well. To keep figure changes reviewable in PRs, generate and commit an **SVG** (text file) instead of a PNG:
+
+```bash
+python scripts/generate_rank_figure.py
+```
+
+This writes `outputs/rank_order.svg`, which can be diffed directly in pull requests.
+If you still need PNG, convert locally from the SVG (for example with ImageMagick or an editor) after merging.
+
