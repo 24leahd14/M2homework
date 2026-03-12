@@ -126,28 +126,38 @@ def main() -> None:
             if score is not None:
                 scores_by_course[course].append(score)
 
+    max_responses_used = max(len(scores) for scores in scores_by_course.values())
+
     ranked = []
     for course, scores in scores_by_course.items():
+        responses_used = len(scores)
+        avg_score = sum(scores) / responses_used
+        response_weight = responses_used / max_responses_used
+        weighted_score = avg_score * response_weight
         ranked.append(
             {
                 "course": course,
-                "responses_used": len(scores),
+                "responses_used": responses_used,
                 "mentions_total": mentions_by_course[course],
                 "most_beneficial": group_counts[course]["Most Beneficial"],
                 "neutral": group_counts[course]["Neutral"],
                 "least_beneficial": group_counts[course]["Least Beneficial"],
-                "avg_score": round(sum(scores) / len(scores), 4),
+                "avg_score": round(avg_score, 4),
+                "response_weight": round(response_weight, 4),
+                "weighted_score": round(weighted_score, 4),
             }
         )
 
-    ranked.sort(key=lambda item: (-item["avg_score"], -item["responses_used"], item["course"]))
+    ranked.sort(key=lambda item: (-item["weighted_score"], -item["avg_score"], -item["responses_used"], item["course"]))
 
     csv_path = Path(args.csv_output)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
         "rank",
         "course",
+        "weighted_score",
         "avg_score",
+        "response_weight",
         "responses_used",
         "mentions_total",
         "most_beneficial",
@@ -169,11 +179,16 @@ def main() -> None:
             "Scoring is deterministic: Most Beneficial = +2 to +3 based on rank, Neutral = 0, "
             "Least Beneficial = -2 to -3 based on rank, and Did not take is excluded.\n\n"
         )
-        f.write("| Rank | Course | Avg score | Responses used | Most | Neutral | Least |\n")
-        f.write("| ---: | --- | ---: | ---: | ---: | ---: | ---: |\n")
+        f.write(
+            "Final ranking uses `weighted_score = avg_score * (responses_used / max_responses_used)` "
+            "to factor in how many completed responses contributed to each course.\n\n"
+        )
+        f.write("| Rank | Course | Weighted score | Avg score | Response weight | Responses used | Most | Neutral | Least |\n")
+        f.write("| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n")
         for i, item in enumerate(ranked, start=1):
             f.write(
-                f"| {i} | {item['course']} | {item['avg_score']:.4f} | {item['responses_used']} | "
+                f"| {i} | {item['course']} | {item['weighted_score']:.4f} | {item['avg_score']:.4f} "
+                f"| {item['response_weight']:.4f} | {item['responses_used']} | "
                 f"{item['most_beneficial']} | {item['neutral']} | {item['least_beneficial']} |\n"
             )
 

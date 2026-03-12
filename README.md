@@ -22,7 +22,7 @@ For each course mention in each finished response:
 - **Least Beneficial**: score from `-2` to `-3` (more negative if ranked closer to #1 within that respondent's Least group)
 - **Did not take**: excluded from scoring
 
-Courses are rank-ordered by descending average score (with deterministic tie-breakers).
+Courses are rank-ordered by descending **weighted score** where `weighted_score = avg_score * (responses_used / max_responses_used)`. This preserves sentiment while down-weighting courses with very few scored responses.
 
 ## Run locally
 
