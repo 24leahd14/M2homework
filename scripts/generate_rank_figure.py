@@ -28,10 +28,10 @@ def generate_svg(rows: list[tuple[int, str, float]]) -> str:
     row_h = 36
     gap = 8
 
-    min_score = min(score for _, _, score in rows)
+    min_score = 0.0
     max_score = max(score for _, _, score in rows)
-    span = max_score - min_score
-    zero_x = chart_left + (0 - min_score) / span * (chart_right - chart_left)
+    span = max(max_score - min_score, 1e-9)
+    zero_x = chart_left
 
     parts: list[str] = []
     parts.append('<?xml version="1.0" encoding="UTF-8"?>')
@@ -51,9 +51,9 @@ def generate_svg(rows: list[tuple[int, str, float]]) -> str:
     for idx, (rank, course, score) in enumerate(rows):
         y = top + idx * (row_h + gap)
         x_end = chart_left + (score - min_score) / span * (chart_right - chart_left)
-        x = min(zero_x, x_end)
-        bar_w = max(1.0, abs(x_end - zero_x))
-        color = "#3b82f6" if score >= 0 else "#ef4444"
+        x = zero_x
+        bar_w = max(1.0, x_end - zero_x)
+        color = "#3b82f6"
         course_label = course.replace("&", "&amp;")
 
         parts.append(
@@ -72,10 +72,6 @@ def generate_svg(rows: list[tuple[int, str, float]]) -> str:
     parts.append('<rect x="40" y="940" width="18" height="18" fill="#3b82f6"/>')
     parts.append(
         f'<text x="66" y="{legend_y}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#374151">Positive score</text>'
-    )
-    parts.append('<rect x="220" y="940" width="18" height="18" fill="#ef4444"/>')
-    parts.append(
-        f'<text x="246" y="{legend_y}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#374151">Negative score</text>'
     )
     parts.append('</svg>')
     return "\n".join(parts)
